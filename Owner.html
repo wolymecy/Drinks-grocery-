@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Drinks Business Management — Login & Admin</title>
+<style>
+  :root{
+    --blue: #0b6efd;
+    --dark: #0b0b0c;
+    --orange: #ff7a00;
+    --bg: #f6f8fb;
+    --card: #ffffff;
+  }
+  body{
+    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--dark);
+    margin:0; padding:24px;
+  }
+  .center { max-width:1000px; margin:0 auto; }
+
+  header{ text-align:center; margin-bottom:18px; }
+  header h1{ margin:0; color:var(--blue); }
+  header p{ margin:6px 0 0; color:#666; }
+
+  .grid{ display:grid; grid-template-columns: 360px 1fr; gap:18px; align-items:start; }
+
+  /* Card */
+  .card{ background:var(--card); border-radius:10px; padding:16px; box-shadow:0 6px 20px rgba(11,14,20,0.06); }
+
+  /* Login */
+  .login-title{ color:var(--dark); margin-bottom:10px; }
+  label{ display:block; font-size:13px; margin-top:10px; color:#333; }
+  input, select, textarea{ width:100%; padding:10px; border:1px solid #e3e6ea; border-radius:6px; font-size:14px; box-sizing:border-box; }
+  button{ display:inline-block; padding:10px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+  .btn-primary{ background:var(--blue); color:white; }
+  .btn-danger{ background:#d94040; color:white; }
+  .btn-orange{ background:var(--orange); color:white; }
+
+  /* Nav / role */
+  .meta{ font-size:13px; color:#555; margin-top:8px; }
+
+  /* Inventory & Sales */
+  .form-row{ display:flex; gap:10px; }
+  .form-row > *{ flex:1; }
+
+  table{ width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
+  th, td{ padding:8px 10px; border-bottom:1px solid #eef1f5; text-align:left; }
+  th{ background:#f1f6ff; color:var(--dark); font-weight:700; }
+
+  /* Admin panel */
+  .admin-header{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .note{ font-size:13px; color:#666; margin-top:8px; }
+
+  footer{ margin-top:18px; text-align:center; color:#888; font-size:13px; }
+  .small { font-size:13px; color:#666; }
+
+  /* Responsive */
+  @media (max-width:900px){ .grid{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <div class="center">
+    <header>
+      <h1>Drinks Business Management</h1>
+      <p>Blue • Black • Orange theme — login, submit sales, admin review</p>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: Login / Account UI -->
+      <div class="card">
+        <div id="authArea">
+          <div id="loginBox">
+            <h3 class="login-title">Login</h3>
+            <label>Username</label>
+            <input id="username" placeholder="owner001 or staff002" />
+            <label>Password</label>
+            <input id="password" type="password" placeholder="your password" />
+            <div style="margin-top:12px; display:flex; gap:10px;">
+              <button class="btn-primary" onclick="handleLogin()">Login</button>
+              <button onclick="showCreateUser()" style="background:#222;color:#fff;border-radius:8px;padding:10px 12px;">Create</button>
+            </div>
+            <p class="small note">Demo accounts: <strong>owner001 / ownerpass123</strong> (admin), <strong>staff002 / staffpass123</strong> (staff).</p>
+          </div>
+
+          <div id="createBox" style="display:none;">
+            <h3 class="login-title">Create User (admin only)</h3>
+            <label>New Username</label>
+            <input id="newUser" />
+            <label>New Password</label>
+            <input id="newPass" type="password" />
+            <label>Role</label>
+            <select id="newRole"><option value="staff">Staff</option><option value="admin">Admin</option></select>
+            <div style="margin-top:12px; display:flex; gap:10px;">
+              <button class="btn-orange" onclick="createUser()">Create user</button>
+              <button onclick="hideCreateUser()" style="background:#888;color:#fff;border-radius:8px;padding:10px 12px;">Cancel</button>
+            </div>
+            <p class="note">Only visible to admins after login — new users are stored in your browser (localStorage) and passwords are stored as salted hashes.</p>
+          </div>
+
+          <div id="loggedBox" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div><strong id="whoName"></strong> <span id="whoRole" style="color:var(--orange);font-weight:600;"></span></div>
+                <div class="small" id="whoInfo"></div>
+              </div>
+              <div style="text-align:right">
+                <button onclick="logout()" class="btn-danger">Logout</button>
+              </div>
+            </div>
+
+            <hr style="margin:12px 0">
+
+            <div id="adminLinks" style="display:none;">
+              <button class="btn-primary" onclick="showAdmin()">Admin: View Submissions</button>
+            </div>
+
+            <div class="note" style="margin-top:10px;">
+              <strong>Tips:</strong> Staff can submit sales. Admins can view, filter and export submissions. Everything stays in your browser's localStorage.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: App / Sales / Admin -->
+      <div class="card" id="appArea">
+        <!-- Default: sales submission for staff -->
+        <div id="salesBox" style="display:none;">
+          <div class="admin-header">
+            <h3 style="margin:0;color:var(--blue)">Submit a Sale</h3>
+            <div class="small">Logged in as <strong id="submitBy"></strong></div>
+          </div>
+
+          <label>Drink/Item name</label>
+          <input id="saleItem" placeholder="e.g., Orange Juice 1L" />
+          <div class="form-row">
+            <div>
+              <label>Quantity</label>
+              <input id="saleQty" type="number" min="1" />
+            </div>
+            <div>
+              <label>Unit Price ($)</label>
+              <input id="salePrice" type="number" step="0.01" />
+            </div>
+          </div>
+
+          <label>Customer phone</label>
+          <input id="salePhone" placeholder="+255 7xx xxx xxx" />
+
+          <label>Notes (optional)</label>
+          <textarea id="saleNotes" rows="3" placeholder="short note"></textarea>
+
+          <div style="margin-top:12px; display:flex; gap:10px;">
+            <button class="btn-primary" onclick="submitSale()">Submit sale</button>
+            <button onclick="clearSaleForm()" style="background:#222;color:#fff;border-radius:8px;padding:10px 12px;">Clear</button>
+          </div>
+
+          <p class="note">Submissions are saved locally and visible to admins.</p>
+
+          <hr style="margin:16px 0">
+
+          <h4 style="color:var(--dark); margin:0 0 8px;">Recent local submissions (yours)</h4>
+          <table>
+            <thead><tr><th>Time</th><th>Item</th><th>Qty</th><th>Total</th><th>Phone</th></tr></thead>
+            <tbody id="recentSales"></tbody>
+          </table>
+        </div>
+
+        <!-- Admin panel -->
+        <div id="adminPanel" style="display:none;">
+          <div class="admin-header">
+            <h3 style="margin:0;color:var(--orange)">Admin — Submissions</h3>
+            <div style="display:flex; gap:8px;">
+              <input id="filterByUser" placeholder="Filter by user..." />
+              <button onclick="renderAdminList()" class="btn-primary">Filter</button>
+              <button onclick="exportSales()" class="btn-orange">Export JSON</button>
+            </div>
+          </div>
+
+          <p class="note">Admins can review all sales submissions from all users stored in localStorage.</p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th><th>Submitted By</th><th>Item</th><th>Qty</th><th>Unit $</th><th>Total $</th><th>Phone</th><th>Notes</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminSalesList"></tbody>
+          </table>
+        </div>
+
+        <!-- If not logged in -->
+        <div id="emptyState" style="text-align:center;">
+          <p style="margin-top:30px;color:#666">Please log in to submit sales or view the admin page.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="small">
+      Demo — All data stored locally in this browser (localStorage). To share or keep data permanently, host with a backend or push to GitHub and deploy.
+    </footer>
+  </div>
+
+<script>
+/* ===========================================================
+   Utilities: encoding, hashing (PBKDF2), localStorage helpers
+   =========================================================== */
+function bytesToBase64(bytes){
+  let binary = '';
+  const view = new Uint8Array(bytes);
+  for (let i=0;i<view.length;i++) binary += String.fromCharCode(view[i]);
+  return btoa(binary);
+}
+function base64ToArrayBuffer(b64){
+  const binary = atob(b64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i=0;i<len;i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+function makeSalt(){
+  const s = new Uint8Array(16);
+  window.crypto.getRandomValues(s);
+  return bytesToBase64(s.buffer);
+}
+async function hashPassword(password, saltB64, iterations=150000){
+  const enc = new TextEncoder();
+  const key = await window.crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']);
+  const derived = await window.crypto.subtle.deriveBits({name:'PBKDF2', hash:'SHA-256', salt: base64ToArrayBuffer(saltB64), iterations}, key, 256);
+  return bytesToBase64(derived);
+}
+
+/* ===========================================================
+   Storage helpers
+   - users: { username: {salt,hash,iterations,role} }
+   - sales: [ {id, time, by, item, qty, unit, total, phone, notes} ]
+   =========================================================== */
+function loadUsers(){
+  try{ return JSON.parse(localStorage.getItem('dgm_users') || '{}'); } catch(e){ return {}; }
+}
+function saveUsers(u){ localStorage.setItem('dgm_users', JSON.stringify(u)); }
+function loadSales(){ try{ return JSON.parse(localStorage.getItem('dgm_sales') || '[]'); } catch(e){ return []; } }
+function saveSales(s){ localStorage.setItem('dgm_sales', JSON.stringify(s)); }
+
+/* ===========================================================
+   Initialize default accounts (only if none exist)
+   =========================================================== */
+(async function initDefaults(){
+  const users = loadUsers();
+  if(!users['owner001']){
+    const salt = makeSalt();
+    const hash = await hashPassword('ownerpass123', salt);
+    users['owner001'] = {salt, hash, iterations:150000, role:'admin'};
+  }
+  if(!users['staff002']){
+    const salt = makeSalt();
+    const hash = await hashPassword('staffpass123', salt);
+    users['staff002'] = {salt, hash, iterations:150000, role:'staff'};
+  }
+  saveUsers(users);
+})();
+
+/* ===========================================================
+   Authentication / session (session kept in-memory)
+   =========================================================== */
+let current = null; // {user,role}
+
+function showCreateUser(){ document.getElementById('loginBox').style.display='none'; document.getElementById('createBox').style.display='block'; }
+function hideCreateUser(){ document.getElementById('createBox').style.display='none'; document.getElementById('loginBox').style.display='block'; }
+
+async function handleLogin(){
+  const u = document.getElementById('username').value.trim();
+  const p = document.getElementById('password').value;
+  if(!u || !p) return alert('Enter username & password');
+  const users = loadUsers();
+  if(!users[u]) return alert('User not found');
+  const rec = users[u];
+  const h = await hashPassword(p, rec.salt, rec.iterations);
+  if(h === rec.hash){
+    current = {user:u, role: rec.role};
+    onLoginSuccess();
+  } else {
+    alert('Incorrect password');
+  }
+}
+
+function logout(){
+  current = null;
+  document.getElementById('loggedBox').style.display='none';
+  document.getElementById('loginBox').style.display='block';
+  document.getElementById('salesBox').style.display='none';
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('emptyState').style.display='block';
+  document.getElementById('username').value='';
+  document.getElementById('password').value='';
+}
+
+/* ===========================================================
+   Create user (admin-only)
+   =========================================================== */
+async function createUser(){
+  if(!current || current.role !== 'admin') return alert('Only admin can create users here (login as admin).');
+  const uname = document.getElementById('newUser').value.trim();
+  const upass = document.getElementById('newPass').value;
+  const urole = document.getElementById('newRole').value;
+  if(!uname || !upass) return alert('Provide username and password');
+  const users = loadUsers();
+  if(users[uname]) return alert('User exists');
+  const salt = makeSalt();
+  const hash = await hashPassword(upass, salt, 150000);
+  users[uname] = {salt, hash, iterations:150000, role: urole};
+  saveUsers(users);
+  alert('User created: ' + uname);
+  document.getElementById('newUser').value=''; document.getElementById('newPass').value='';
+  hideCreateUser();
+  renderUsersList(); // optional
+}
+
+/* ===========================================================
+   Post-login UI & role-specific rendering
+   =========================================================== */
+function onLoginSuccess(){
+  document.getElementById('loginBox').style.display='none';
+  document.getElementById('createBox').style.display='none';
+  document.getElementById('loggedBox').style.display='block';
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('salesBox').style.display='block';
+  document.getElementById('whoName').innerText = current.user;
+  document.getElementById('whoRole').innerText = current.role === 'admin' ? '(ADMIN)' : '(staff)';
+  document.getElementById('whoInfo').innerText = 'Logged in — role: ' + current.role;
+  document.getElementById('submitBy').innerText = current.user;
+
+  if(current.role === 'admin'){
+    document.getElementById('adminLinks').style.display='block';
+    document.getElementById('adminPanel').style.display='block';
+    renderAdminList();
+  } else {
+    document.getElementById('adminLinks').style.display='none';
+    document.getElementById('adminPanel').style.display='none';
+  }
+
+  renderRecentSales();
+}
+
+/* ===========================================================
+   Sales submission by staff
+   =========================================================== */
+function clearSaleForm(){
+  document.getElementById('saleItem').value=''; document.getElementById('saleQty').value=''; document.getElementById('salePrice').value=''; document.getElementById('salePhone').value=''; document.getElementById('saleNotes').value='';
+}
+
+function submitSale(){
+  if(!current) return alert('Login required');
+  const item = document.getElementById('saleItem').value.trim();
+  const qty = parseFloat(document.getElementById('saleQty').value);
+  const unit = parseFloat(document.getElementById('salePrice').value);
+  const phone = document.getElementById('salePhone').value.trim();
+  const notes = document.getElementById('saleNotes').value.trim();
+  if(!item || !qty || !unit) return alert('Please fill item, quantity and unit price');
+  const total = +(qty * unit).toFixed(2);
+  const sales = loadSales();
+  const entry = { id: 's'+Date.now(), time: new Date().toISOString(), by: current.user, role: current.role, item, qty, unit, total, phone, notes };
+  sales.unshift(entry);
+  saveSales(sales);
+  clearSaleForm();
+  alert('Sale submitted');
+  renderRecentSales();
+  renderAdminList();
+}
+
+/* ===========================================================
+   Render recent sales (for the logged-in user)
+   =========================================================== */
+function renderRecentSales(){
+  const tbody = document.getElementById('recentSales');
+  tbody.innerHTML = '';
+  if(!current) return;
+  const sales = loadSales();
+  const mine = sales.filter(s => s.by === current.user).slice(0,10);
+  if(mine.length === 0){
+    tbody.innerHTML = '<tr><td colspan="5" style="color:#666">No submissions yet</td></tr>';
+    return;
+  }
+  for(const s of mine){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${new Date(s.time).toLocaleString()}</td><td>${escapeHtml(s.item)}</td><td>${s.qty}</td><td>$${s.total.toFixed(2)}</td><td>${escapeHtml(s.phone||'')}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+/* ===========================================================
+   Admin: render all submissions, delete or mark as reviewed
+   =========================================================== */
+function renderAdminList(){
+  const tbody = document.getElementById('adminSalesList');
+  tbody.innerHTML = '';
+  if(!current || current.role !== 'admin'){ tbody.innerHTML = '<tr><td colspan="9">Admins only</td></tr>'; return; }
+  const filter = (document.getElementById('filterByUser').value || '').toLowerCase();
+  const sales = loadSales().filter(s => !filter || s.by.toLowerCase().includes(filter));
+  if(sales.length === 0){ tbody.innerHTML = '<tr><td colspan="9" style="color:#666">No submissions</td></tr>'; return; }
+  for(const s of sales){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${new Date(s.time).toLocaleString()}</td>
+                    <td>${escapeHtml(s.by)}</td>
+                    <td>${escapeHtml(s.item)}</td>
+                    <td>${s.qty}</td>
+                    <td>$${s.unit.toFixed(2)}</td>
+                    <td>$${s.total.toFixed(2)}</td>
+                    <td>${escapeHtml(s.phone||'')}</td>
+                    <td>${escapeHtml(s.notes||'')}</td>
+                    <td>
+                      <button onclick="deleteSale('${s.id}')" style="background:#d94040;color:#fff;padding:6px 8px;border-radius:6px;border:0;">Delete</button>
+                    </td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function deleteSale(id){
+  if(!current || current.role !== 'admin') return alert('Only admin');
+  if(!confirm('Delete this submission?')) return;
+  const sales = loadSales().filter(s => s.id !== id);
+  saveSales(sales);
+  renderAdminList();
+  renderRecentSales();
+}
+
+/* ===========================================================
+   Export sales JSON
+   =========================================================== */
+function exportSales(){
+  if(!current || current.role !== 'admin') return alert('Only admin can export');
+  const data = JSON.stringify(loadSales(), null, 2);
+  // download as file
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'dgm_sales_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ===========================================================
+   Small helpers
+   =========================================================== */
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+/* ===========================================================
+   Expose some admin view function
+   =========================================================== */
+function showAdmin(){
+  if(!current || current.role !== 'admin') return alert('Admins only');
+  document.getElementById('adminPanel').style.display='block';
+  renderAdminList();
+}
+
+/* On load: show initial login area */
+(function mount(){
+  document.getElementById('loggedBox').style.display='none';
+  document.getElementById('createBox').style.display='none';
+  document.getElementById('salesBox').style.display='none';
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('emptyState').style.display='block';
+})();
+</script>
+</body>
+</html>

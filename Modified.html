@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drinks Business Management</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #e9f0ff; /* soft blue background */
+        padding: 20px;
+    }
+
+    /* containers */
+    .box {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+
+    h2, h3 {
+        text-align: center;
+        color: #003366; /* dark navy blue */
+    }
+
+    label {
+        margin-top: 12px;
+        display: block;
+        font-weight: bold;
+        color: #000000; /* black */
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px;
+        margin-top: 5px;
+        border: 2px solid #003366;
+        border-radius: 6px;
+        background: #f8faff;
+    }
+
+    button {
+        margin-top: 15px;
+        background: #ff6600; /* orange */
+        color: white;
+        border: none;
+        padding: 12px;
+        width: 100%;
+        font-size: 17px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    button:hover {
+        background: #cc5200; /* darker orange */
+    }
+
+    /* Logout button */
+    .logout-btn {
+        background: black;
+        color: white;
+        width: 140px;
+        float: right;
+        margin-bottom: 15px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th {
+        background: #003366;
+        color: white;
+        padding: 10px;
+    }
+
+    td {
+        padding: 10px;
+        border: 1px solid #ccc;
+    }
+
+    .delete-btn {
+        background: red;
+        padding: 6px 10px;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    /* Login box style */
+    #loginBox {
+        max-width: 400px;
+        margin: 120px auto;
+        padding: 25px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginBox" class="box">
+    <h2>Login</h2>
+    <label>Username</label>
+    <input type="text" id="username">
+
+    <label>Password</label>
+    <input type="password" id="password">
+
+    <button onclick="login()">Login</button>
+</div>
+
+<!-- MAIN SYSTEM -->
+<div id="system" class="box" style="display:none;">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+
+    <h2>Drinks Management System</h2>
+
+    <!-- Inventory Form -->
+    <h3>Add Inventory</h3>
+    <label>Drink Name</label>
+    <input type="text" id="drinkName">
+
+    <label>Category</label>
+    <select id="category">
+        <option>Soda</option>
+        <option>Juice</option>
+        <option>Water</option>
+        <option>Energy Drink</option>
+        <option>Alcohol</option>
+    </select>
+
+    <label>Quantity</label>
+    <input type="number" id="quantity">
+
+    <label>Price ($)</label>
+    <input type="number" id="price" step="0.01">
+
+    <button onclick="addDrink()">Add to Inventory</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Drink</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="inventory"></tbody>
+    </table>
+
+    <h3>Total Inventory Value: $<span id="inventoryValue">0.00</span></h3>
+
+    <hr style="margin:30px 0;">
+
+    <!-- Sales Form -->
+    <h3>Record Sale</h3>
+
+    <label>Drink Sold</label>
+    <input type="text" id="saleDrink">
+
+    <label>Quantity Sold</label>
+    <input type="number" id="saleQty">
+
+    <label>Selling Price ($)</label>
+    <input type="number" id="salePrice" step="0.01">
+
+    <button onclick="submitSale()">Submit Sale</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Drink</th>
+                <th>Qty Sold</th>
+                <th>Price</th>
+                <th>Total Sale</th>
+            </tr>
+        </thead>
+        <tbody id="salesTable"></tbody>
+    </table>
+
+</div>
+
+<script>
+// LOGIN SYSTEM
+let user = { username: "admin", password: "admin123" };
+
+function login() {
+    let u = document.getElementById("username").value;
+    let p = document.getElementById("password").value;
+
+    if (u === user.username && p === user.password) {
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("system").style.display = "block";
+    } else {
+        alert("Incorrect username or password");
+    }
+}
+
+function logout() {
+    document.getElementById("system").style.display = "none";
+    document.getElementById("loginBox").style.display = "block";
+}
+
+// INVENTORY SYSTEM
+function addDrink() {
+    let name = document.getElementById("drinkName").value;
+    let category = document.getElementById("category").value;
+    let qty = document.getElementById("quantity").value;
+    let price = document.getElementById("price").value;
+
+    if (!name || !qty || !price) {
+        alert("Fill all fields");
+        return;
+    }
+
+    let table = document.getElementById("inventory");
+    let row = document.createElement("tr");
+
+    let total = (qty * price).toFixed(2);
+
+    row.innerHTML = `
+        <td>${name}</td>
+        <td>${category}</td>
+        <td>${qty}</td>
+        <td>$${price}</td>
+        <td>$${total}</td>
+        <td><button class="delete-btn" onclick="deleteRow(this, ${total})">Delete</button></td>
+    `;
+
+    table.appendChild(row);
+    updateTotal(parseFloat(total));
+
+    document.getElementById("drinkName").value = "";
+    document.getElementById("quantity").value = "";
+    document.getElementById("price").value = "";
+}
+
+function deleteRow(btn, amount) {
+    btn.parentElement.parentElement.remove();
+    updateTotal(-amount);
+}
+
+function updateTotal(amount) {
+    let display = document.getElementById("inventoryValue");
+    let current = parseFloat(display.innerText);
+    display.innerText = (current + amount).toFixed(2);
+}
+
+// SALES SYSTEM
+function submitSale() {
+    let drink = document.getElementById("saleDrink").value;
+    let qty = document.getElementById("saleQty").value;
+    let price = document.getElementById("salePrice").value;
+
+    if (!drink || !qty || !price) {
+        alert("Fill all sale fields");
+        return;
+    }
+
+    let totalSale = (qty * price).toFixed(2);
+
+    let table = document.getElementById("salesTable");
+    let row = document.createElement("tr");
+
+    row.innerHTML = `
+        <td>${drink}</td>
+        <td>${qty}</td>
+        <td>$${price}</td>
+        <td>$${totalSale}</td>
+    `;
+
+    table.appendChild(row);
+
+    document.getElementById("saleDrink").value = "";
+    document.getElementById("saleQty").value = "";
+    document.getElementById("salePrice").value = "";
+
+    alert("Sale submitted successfully!");
+}
+</script>
+
+</body>
+</html>
