@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drinks Business & Admin System</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #e6e6e6;
+        margin: 0;
+        padding: 0;
+    }
+
+    h2, h3 {
+        text-align: center;
+        color: #003b73;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        margin-top: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+        color: #000;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #777;
+        border-radius: 5px;
+        margin-top: 5px;
+    }
+
+    button {
+        margin-top: 15px;
+        background: #ff7b00;
+        color: white;
+        padding: 12px;
+        width: 100%;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #c86400;
+    }
+
+    .logout-btn {
+        background: red !important;
+    }
+
+    table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        border: 1px solid #999;
+        padding: 10px;
+        text-align: left;
+    }
+
+    th {
+        background: #003b73;
+        color: white;
+    }
+
+    .admin-only {
+        background: #001829;
+        color: white;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    #system, #adminPanel {
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+
+
+
+    <h2>Record Sale</h2>
+
+    <label>Drink Sold</label>
+    <input type="text" id="saleDrink">
+
+    <label>Quantity Sold</label>
+    <input type="number" id="saleQty">
+
+    <label>Price ($)</label>
+    <input type="number" id="salePrice">
+
+    <button onclick="submitSale()">Submit Sale</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Drink</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total Sale</th>
+            </tr>
+        </thead>
+        <tbody id="sales"></tbody>
+    </table>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="container" id="adminPanel">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+
+    <h2>OWNER ADMIN DASHBOARD</h2>
+    <h3>All Inventory Submissions</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Drink</th>
+                <th>Category</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total Value</th>
+            </tr>
+        </thead>
+        <tbody id="adminInventory"></tbody>
+    </table>
+
+    <h3>All Sales Submissions</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Drink</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total Sale</th>
+            </tr>
+        </thead>
+        <tbody id="adminSales"></tbody>
+    </table>
+</div>
+
+<script>
+let adminPass = "owner001";
+
+function login() {
+    let user = document.getElementById("username").value.trim();
+    let pass = document.getElementById("password").value.trim();
+
+    if (pass === adminPass) {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
+        loadAdminData();
+    }
+    else if (user === "staff" && pass === "1234") {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("system").style.display = "block";
+    }
+    else {
+        alert("Incorrect login");
+    }
+}
+
+function logout() {
+    location.reload();
+}
+
+/* ------ STAFF FUNCTIONS ------ */
+
+function addDrink() {
+    let name = drinkName.value;
+    let category = category.value;
+    let qty = quantity.value;
+    let price = price.value;
+
+    if (!name || !qty || !price) return alert("Fill all fields");
+
+    let total = qty * price;
+
+    let row = `
+        <tr>
+            <td>${name}</td>
+            <td>${category}</td>
+            <td>${qty}</td>
+            <td>${price}</td>
+            <td>${total.toFixed(2)}</td>
+        </tr>
+    `;
+
+    inventory.innerHTML += row;
+    saveData("inventoryData", row);
+
+    inventoryValue.innerText = (parseFloat(inventoryValue.innerText) + total).toFixed(2);
+}
+
+function submitSale() {
+    let drink = saleDrink.value;
+    let qty = saleQty.value;
+    let price = salePrice.value;
+
+    if (!drink || !qty || !price) return alert("Fill all fields");
+
+    let total = qty * price;
+
+    let row = `
+        <tr>
+            <td>${drink}</td>
+            <td>${qty}</td>
+            <td>${price}</td>
+            <td>${total.toFixed(2)}</td>
+        </tr>
+    `;
+
+    sales.innerHTML += row;
+    saveData("salesData", row);
+
+    alert("Sale submitted!");
+}
+
+/* ------ SAVE DATA TO LOCAL STORAGE ------ */
+function saveData(key, row) {
+    let existing = localStorage.getItem(key) || "";
+    localStorage.setItem(key, existing + row);
+}
+
+/* ------ LOAD ADMIN TABLES ------ */
+function loadAdminData() {
+    adminInventory.innerHTML = localStorage.getItem("inventoryData") || "";
+    adminSales.innerHTML = localStorage.getItem("salesData") || "";
+}
+</script>
+
+</body>
+</html>
